@@ -27,6 +27,24 @@ logging.basicConfig(
     level=logging.INFO,
     filename='ssh_honeypot.log')
 
+def detect_url(command, client_ip):
+    regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+    result = re.findall(regex, command)
+    if result:
+        for ar in result:
+            for url in ar:
+                if url != '':
+                    logging.info('New URL detected ({}): '.format(client_ip, url))
+                    r.lpush("download_queue", url)
+
+    ip_regex = r"([0-9]+(?:\.[0-9]+){3}\/\S*)"
+    ip_result = re.findall(ip_regex, command)
+    if ip_result:
+        for ip_url in ip_result:
+            if ip_url != '':
+                logging.info('New IP-based URL detected ({}): '.format(client_ip, ip_url))
+                r.lpush("download_queue", ip_url)
+
 def handle_cmd(cmd, chan, ip):
 
     response = ""
